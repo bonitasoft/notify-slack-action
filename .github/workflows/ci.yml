@@ -1,0 +1,32 @@
+name: Continuous Integration
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  test-action:
+    name: GitHub Actions Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        id: checkout
+        uses: actions/checkout@v4
+
+      - name: Execute local action
+        id: test-action
+        uses: ./
+        with:
+          keeper-secret-config: ${{ secrets.KSM_CONFIG }}
+          channel-id: ${{ vars.TEST_SLACK_CHANNEL_ID }}
+          message: |
+            :party-wizard: Message sent magically by <https://github.com/bonitasoft/notify-slack-action| a wizard>
+
+      - name: Print outputs
+        run: "echo 'Message timestamp: ${{ steps.test-action.outputs.message-timestamp }}'"

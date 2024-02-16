@@ -1,0 +1,63 @@
+name: Notify Slack
+description: Send a message to a channel Slack
+author: Bonitasoft
+
+inputs:
+  keeper-secret-config:
+    description: The Keeper Secret Manager configuration
+    required: true
+  channel-id:
+    description: The Slack channel id where to send the message
+    required: true
+    default: ${{ vars.SLACK_INTEGRATION_TEST_CHANNEL_ID }}
+  message:
+    description: The message to display in first block of notification
+    required: true
+    default: ":ok_hand: Action on branch ${{ github.ref }} is triggered"
+  previous-message-ts:
+    description: The timestamp of a previous message posted. It will update the existing message instead of posting a new message.
+    required: false
+
+outputs:
+  message-timestamp:
+    description: The timestamp of the message posted
+    value: ${{ steps.slack-action.outputs.ts }}
+
+runs:
+  using: composite
+  steps:
+    - name: Retrieve Slack OAuth token from Keeper
+      uses: Keeper-Security/ksm-action@v1
+      with:
+        keeper-secret-config: ${{ inputs.keeper-secret-config }}
+        secrets: |
+          SpEPtxeWhDrmEJKdIwsIKw/field/password > env:SLACK_BOT_TOKEN
+
+    - name: Send message to Slack channel
+      id: slack-action
+      uses: slackapi/slack-github-action@v1
+      with:
+        channel-id: ${{ inputs.channel-id }}
+        update-ts: ${{ inputs.previous-message-ts }}
+        payload: |
+          {
+            "blocks": [
+              {
+                "type": "section",
+                "text": {
+                  "type": "mrkdwn",
+                  "text": ${{ toJSON(inputs.message) }}
+                }
+              },
+              {
+                "type": "divider"
+              },
+              {
+                "type": "section",
+                "text": {
+                  "type": "mrkdwn",
+                  "text": "More details <https://github.com/${{github.repository}}/actions/runs/${{github.run_id}}?check_suite_focus=true| here>"
+                }
+              }
+            ]
+          }
