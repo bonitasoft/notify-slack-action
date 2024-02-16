@@ -9,7 +9,7 @@ inputs:
   channel-id:
     description: The Slack channel id where to send the message
     required: true
-    default: ${{ vars.SLACK_INTEGRATION_TEST_CHANNEL_ID }}
+    default: C02J5M4JMK7 # channel slack-integration-test
   message:
     description: The message to display in first block of notification
     required: true
