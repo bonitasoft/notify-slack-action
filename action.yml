@@ -35,7 +35,7 @@ runs:
 
     - name: Send message to Slack channel
       id: slack-action
-      uses: slackapi/slack-github-action@v1
+      uses: slackapi/slack-github-action@v2
       with:
         channel-id: ${{ inputs.channel-id }}
         update-ts: ${{ inputs.previous-message-ts }}
