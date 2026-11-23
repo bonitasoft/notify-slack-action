@@ -27,7 +27,7 @@ runs:
   using: composite
   steps:
     - name: Retrieve Slack OAuth token from Keeper
-      uses: Keeper-Security/ksm-action@v1
+      uses: Keeper-Security/ksm-action@bb4c5568aaf752666e3029748495cd819c88c446 # v1.4.0
       with:
         keeper-secret-config: ${{ inputs.keeper-secret-config }}
         secrets: |
@@ -35,7 +35,7 @@ runs:
 
     - name: Send message to Slack channel
       id: slack-action
-      uses: slackapi/slack-github-action@v1
+      uses: slackapi/slack-github-action@fcfb566f8b0aab22203f066d80ca1d7e4b5d05b3 # v1.27.1
       with:
         channel-id: ${{ inputs.channel-id }}
         update-ts: ${{ inputs.previous-message-ts }}
