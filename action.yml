@@ -52,8 +52,9 @@ runs:
           echo "::error::channel-id and previous-message-ts must not contain whitespace or newlines"
           exit 1
         fi
-        echo "channel-id=$channel_id" >> "$GITHUB_OUTPUT"
-        echo "previous-message-ts=$previous_message_ts" >> "$GITHUB_OUTPUT"
+        # printf, not echo: echo may expand backslash escapes (BASHOPTS=xpg_echo) into newlines
+        printf 'channel-id=%s\n' "$channel_id" >> "$GITHUB_OUTPUT"
+        printf 'previous-message-ts=%s\n' "$previous_message_ts" >> "$GITHUB_OUTPUT"
 
     - name: Send message to Slack channel
       id: slack-action
