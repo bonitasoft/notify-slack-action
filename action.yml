@@ -34,7 +34,7 @@ runs:
           SpEPtxeWhDrmEJKdIwsIKw/field/password > env:SLACK_BOT_TOKEN
 
     # slack-github-action v1 trimmed these inputs, v2+ sends them to Slack as is
-    - name: Trim Slack inputs
+    - name: Trim and check Slack inputs
       id: inputs
       shell: bash
       env:
@@ -45,8 +45,15 @@ runs:
           local value="${1#"${1%%[![:space:]]*}"}"
           printf '%s' "${value%"${value##*[![:space:]]}"}"
         }
-        echo "channel-id=$(trim "$CHANNEL_ID")" >> "$GITHUB_OUTPUT"
-        echo "previous-message-ts=$(trim "$PREVIOUS_MESSAGE_TS")" >> "$GITHUB_OUTPUT"
+        channel_id="$(trim "$CHANNEL_ID")"
+        previous_message_ts="$(trim "$PREVIOUS_MESSAGE_TS")"
+        # a whitespace or newline left inside is invalid, and a newline would inject outputs below
+        if [[ "$channel_id" == *[[:space:]]* || "$previous_message_ts" == *[[:space:]]* ]]; then
+          echo "::error::channel-id and previous-message-ts must not contain whitespace or newlines"
+          exit 1
+        fi
+        echo "channel-id=$channel_id" >> "$GITHUB_OUTPUT"
+        echo "previous-message-ts=$previous_message_ts" >> "$GITHUB_OUTPUT"
 
     - name: Send message to Slack channel
       id: slack-action

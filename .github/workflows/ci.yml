@@ -88,3 +88,23 @@ jobs:
             echo "::error::Posting to an unknown channel ended with '$OUTCOME' instead of failing"
             exit 1
           fi
+
+      # If the newline reached the action outputs, it would clear the timestamp and post a new message
+      - name: Pass a timestamp holding a newline
+        id: update-injected-ts
+        continue-on-error: true
+        uses: ./
+        with:
+          keeper-secret-config: ${{ secrets.KSM_CONFIG }}
+          channel-id: ${{ env.CHANNEL_ID }}
+          previous-message-ts: "1\nprevious-message-ts="
+          message: This message must not be posted
+
+      - name: Check a newline in an input fails the step
+        env:
+          OUTCOME: ${{ steps.update-injected-ts.outcome }}
+        run: |
+          if [ "$OUTCOME" != "failure" ]; then
+            echo "::error::A timestamp holding a newline ended with '$OUTCOME' instead of failing"
+            exit 1
+          fi
