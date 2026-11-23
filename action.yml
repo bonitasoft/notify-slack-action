@@ -11,7 +11,7 @@ inputs:
     required: true
     default: C02J5M4JMK7 # channel slack-integration-test
   message:
-    description: The message to display in first block of notification
+    description: The message to display in first block of notification, also used as the top-level notification text
     required: true
     default: ":ok_hand: Action on branch ${{ github.ref }} is triggered"
   previous-message-ts:
@@ -43,6 +43,7 @@ runs:
           {
             "channel": ${{ toJSON(inputs.channel-id) }},
             ${{ inputs.previous-message-ts && format('"ts": {0},', toJSON(inputs.previous-message-ts)) || '' }}
+            "text": ${{ toJSON(format('{0}{1}More details <https://github.com/{2}/actions/runs/{3}?check_suite_focus=true| here>', inputs.message, fromJSON('"\n"'), github.repository, github.run_id)) }},
             "blocks": [
               {
                 "type": "section",
