@@ -5,6 +5,11 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
+    inputs:
+      channel-id:
+        description: Slack channel id to send the test messages to (defaults to the TEST_SLACK_CHANNEL_ID variable)
+        required: false
 
 permissions:
   contents: read
@@ -13,20 +18,55 @@ jobs:
   test-action:
     name: GitHub Actions Test
     runs-on: ubuntu-latest
+    env:
+      CHANNEL_ID: ${{ inputs.channel-id || vars.TEST_SLACK_CHANNEL_ID }}
 
     steps:
       - name: Checkout
         id: checkout
         uses: actions/checkout@v4
 
-      - name: Execute local action
-        id: test-action
+      # Some callers pass a channel id with surrounding whitespace (e.g. a variable ending with a space):
+      # the message must still be posted.
+      - name: Post a message
+        id: post
         uses: ./
         with:
           keeper-secret-config: ${{ secrets.KSM_CONFIG }}
-          channel-id: ${{ vars.TEST_SLACK_CHANNEL_ID }}
+          channel-id: ${{ format(' {0} ', env.CHANNEL_ID) }}
           message: |
             :party-wizard: Message sent magically by <https://github.com/bonitasoft/notify-slack-action| a wizard>
+            Special characters: "double quotes", 'single quotes', back\slash, {braces}, <&> and a :rocket: emoji
 
-      - name: Print outputs
-        run: "echo 'Message timestamp: ${{ steps.test-action.outputs.message-timestamp }}'"
+            Run ${{ github.run_id }} attempt ${{ github.run_attempt }}: this message should then be updated.
+
+      - name: Check the message was posted
+        env:
+          POSTED_TS: ${{ steps.post.outputs.message-timestamp }}
+        run: |
+          echo "Message timestamp: $POSTED_TS"
+          if [ -z "$POSTED_TS" ]; then
+            echo "::error::No message timestamp: the message was not posted"
+            exit 1
+          fi
+
+      - name: Update the message
+        id: update
+        uses: ./
+        with:
+          keeper-secret-config: ${{ secrets.KSM_CONFIG }}
+          channel-id: ${{ env.CHANNEL_ID }}
+          previous-message-ts: ${{ steps.post.outputs.message-timestamp }}
+          message: |
+            :white_check_mark: Message updated by run ${{ github.run_id }} attempt ${{ github.run_attempt }}
+
+      - name: Check the message was updated
+        env:
+          POSTED_TS: ${{ steps.post.outputs.message-timestamp }}
+          UPDATED_TS: ${{ steps.update.outputs.message-timestamp }}
+        run: |
+          echo "Posted: $POSTED_TS / updated: $UPDATED_TS"
+          if [ "$UPDATED_TS" != "$POSTED_TS" ]; then
+            echo "::error::The update did not return the timestamp of the posted message: the message was not updated"
+            exit 1
+          fi
