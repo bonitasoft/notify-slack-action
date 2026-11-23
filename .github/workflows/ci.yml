@@ -70,3 +70,21 @@ jobs:
             echo "::error::The update did not return the timestamp of the posted message: the message was not updated"
             exit 1
           fi
+
+      - name: Post to a channel that does not exist
+        id: post-unknown-channel
+        continue-on-error: true
+        uses: ./
+        with:
+          keeper-secret-config: ${{ secrets.KSM_CONFIG }}
+          channel-id: C00000000
+          message: This message must not be posted
+
+      - name: Check a Slack error fails the step
+        env:
+          OUTCOME: ${{ steps.post-unknown-channel.outcome }}
+        run: |
+          if [ "$OUTCOME" != "failure" ]; then
+            echo "::error::Posting to an unknown channel ended with '$OUTCOME' instead of failing"
+            exit 1
+          fi
