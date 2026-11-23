@@ -33,16 +33,41 @@ runs:
         secrets: |
           SpEPtxeWhDrmEJKdIwsIKw/field/password > env:SLACK_BOT_TOKEN
 
+    # slack-github-action v1 trimmed these inputs, v2+ sends them to Slack as is
+    - name: Trim and check Slack inputs
+      id: inputs
+      shell: bash
+      env:
+        CHANNEL_ID: ${{ inputs.channel-id }}
+        PREVIOUS_MESSAGE_TS: ${{ inputs.previous-message-ts }}
+      run: |
+        trim() {
+          local value="${1#"${1%%[![:space:]]*}"}"
+          printf '%s' "${value%"${value##*[![:space:]]}"}"
+        }
+        channel_id="$(trim "$CHANNEL_ID")"
+        previous_message_ts="$(trim "$PREVIOUS_MESSAGE_TS")"
+        # a whitespace or newline left inside is invalid, and a newline would inject outputs below
+        if [[ "$channel_id" == *[[:space:]]* || "$previous_message_ts" == *[[:space:]]* ]]; then
+          echo "::error::channel-id and previous-message-ts must not contain whitespace or newlines"
+          exit 1
+        fi
+        # printf, not echo: echo may expand backslash escapes (BASHOPTS=xpg_echo) into newlines
+        printf 'channel-id=%s\n' "$channel_id" >> "$GITHUB_OUTPUT"
+        printf 'previous-message-ts=%s\n' "$previous_message_ts" >> "$GITHUB_OUTPUT"
+
     - name: Send message to Slack channel
       id: slack-action
       uses: slackapi/slack-github-action@dcb1066f776dd043e64d0e8ba94ca15cc7e1875d # v4.0.0
       with:
-        method: ${{ inputs.previous-message-ts && 'chat.update' || 'chat.postMessage' }}
+        method: ${{ steps.inputs.outputs.previous-message-ts && 'chat.update' || 'chat.postMessage' }}
         token: ${{ env.SLACK_BOT_TOKEN }}
+        # fail the step when Slack rejects the call, as slack-github-action v1 did
+        errors: true
         payload: |
           {
-            "channel": ${{ toJSON(inputs.channel-id) }},
-            ${{ inputs.previous-message-ts && format('"ts": {0},', toJSON(inputs.previous-message-ts)) || '' }}
+            "channel": ${{ toJSON(steps.inputs.outputs.channel-id) }},
+            ${{ steps.inputs.outputs.previous-message-ts && format('"ts": {0},', toJSON(steps.inputs.outputs.previous-message-ts)) || '' }}
             "text": ${{ toJSON(format('{0}{1}More details <https://github.com/{2}/actions/runs/{3}?check_suite_focus=true| here>', inputs.message, fromJSON('"\n"'), github.repository, github.run_id)) }},
             "blocks": [
               {
