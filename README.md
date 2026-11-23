@@ -10,7 +10,7 @@ Composite GitHub Action to send a message to a Slack channel.
 | ---------------------- | -------- | ----------------------------------------------------------------------------------------------------------------- |
 | `keeper-secret-config` | `true`   | The Keeper Secret Manager configuration used to retrieve Slack OAuth token from KSM                               |
 | `channel-id`           | `true`   | The Slack channel id where to send the message                                                                    |
-| `message`              | `true`   | The message to display in first block of notification                                                             |
+| `message`              | `true`   | The message to display in first block of notification, also used as the top-level notification text               |
 | `previous-message-ts`  | `false`  | The timestamp of a previous message posted. It will update the existing message instead of posting a new message. |
 
 ## Outputs
