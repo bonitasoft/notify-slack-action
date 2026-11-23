@@ -43,7 +43,7 @@ runs:
           {
             "channel": ${{ toJSON(inputs.channel-id) }},
             ${{ inputs.previous-message-ts && format('"ts": {0},', toJSON(inputs.previous-message-ts)) || '' }}
-            "text": ${{ toJSON(inputs.message) }},
+            "text": ${{ toJSON(format('{0}{1}More details <https://github.com/{2}/actions/runs/{3}?check_suite_focus=true| here>', inputs.message, fromJSON('"\n"'), github.repository, github.run_id)) }},
             "blocks": [
               {
                 "type": "section",
